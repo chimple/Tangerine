@@ -105,7 +105,10 @@ echo "Setting T_TAG to: $T_TAG"
 
 T_COUCHDB_ENDPOINT="http://$T_COUCHDB_USER_ADMIN_NAME:$T_COUCHDB_USER_ADMIN_PASS@couchdb:5984/"
 
-docker build -t tangerine/tangerine:local .
+# Unable to find image 'tangerine/tangerine:local' locally
+# docker: Error response from daemon: manifest for tangerine/tangerine:local not found: manifest unknown: manifest unknown
+docker build -t tangerine/tangerine:local . 
+
 [ "$(docker ps | grep $T_CONTAINER_NAME)" ] && docker stop $T_CONTAINER_NAME
 [ "$(docker ps -a | grep $T_CONTAINER_NAME)" ] && docker rm $T_CONTAINER_NAME
 
