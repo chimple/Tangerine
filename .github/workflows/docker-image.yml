@@ -19,7 +19,7 @@ jobs:
       uses: docker/metadata-action@v4
       with:
         images: |
-          tangerine/tangerine
+          chimple/tangerine
         tags: |
           type=sha
           type=raw,value=latest
