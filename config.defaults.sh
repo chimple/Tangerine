@@ -10,7 +10,7 @@
 # tangerine on that new server with the desired settings, then migrate uploaded data to a your new server installation.
 #
 
-# Domain name of the Tangerine installation. If doing local development without ngrok, use 127.0.0.1, not localhost.
+# Domain name of the Tangerine installation. If doing local development without ngrok, use 127.0.0.1, not localhost. 
 T_HOST_NAME='127.0.0.1'
 T_MAINTAINER_EMAIL="skanda@sutara.org"
 # Set to HTTPS for redirecting any requests to https. However you will need to put a reverse proxy with SSL in front.
