@@ -5,7 +5,7 @@ import { FormsService } from 'src/app/shared/_services/forms-service.service';
 import { CaseService } from 'src/app/case/services/case.service';
 import { TangyFormService } from '../tangy-form.service';
 import { XapiService } from 'src/app/case/services/xapi.service';
-const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
+const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds));
 
 @Component({
   selector: 'app-tangy-forms-player',
@@ -31,6 +31,9 @@ export class TangyFormsPlayerComponent implements OnInit {
   startTime!: Date;
   formSubmitted: boolean = false;
   lang = localStorage.getItem('tangerine-language') || 'en';
+  actor: string = "John Doe";
+  mailto: string = "mailto:john.doe@example.com";
+  endpoint: string = "https://tangerine.lrs.io/xapi";
    
 
   throttledSaveLoaded
@@ -61,8 +64,8 @@ export class TangyFormsPlayerComponent implements OnInit {
       const duration = this.msToISO8601Duration(endTime.getTime() - this.startTime.getTime());
       const statement = {
         actor: {
-          name: "John Doe",
-          mbox: "mailto:john.doe@example.com",
+          name: this.actor,
+          mbox: this.mailto,
           objectType: "Agent"
         },
         verb: {
@@ -86,7 +89,7 @@ export class TangyFormsPlayerComponent implements OnInit {
         timestamp: endTime.toISOString()
       };
 
-      this.xapiService.sendStatement(statement).then(() => {
+      this.xapiService.sendStatement(statement, this.endpoint).then(() => {
         console.log('xAPI statement sent successfully');
       }).catch((error) => {
         console.error('Error sending xAPI statement:', error);
@@ -103,42 +106,42 @@ export class TangyFormsPlayerComponent implements OnInit {
     return `PT${hours > 0 ? hours + 'H' : ''}${minutes > 0 ? minutes + 'M' : ''}${seconds > 0 ? seconds + 'S' : ''}`;
   }
 
- extractTangyResponseForXAPI(tangyResponse: any) {
-  const responses: any = {};  
-  tangyResponse.items.forEach((item: any) => {
-    item.inputs.forEach((input: any) => {
-      if (input.value) {
-        if (Array.isArray(input.value)) {
-          if (input.value.length > 0 && typeof input.value[0] === 'object') {
-            const extractedValues = input.value
-              .filter((obj: any) => obj.value && obj.value.toString().trim() !== '')
-              .map((obj: any) => ({
-                name: obj.name,
-                value: obj.value
-              }));
-            
-            if (extractedValues.length > 0) {
-              responses[input.name] = extractedValues;
+  extractTangyResponseForXAPI(tangyResponse: any) {
+    const responses: any = {};  
+    tangyResponse.items.forEach((item: any) => {
+      item.inputs.forEach((input: any) => {
+        if (input.value) {
+          if (Array.isArray(input.value)) {
+            if (input.value.length > 0 && typeof input.value[0] === 'object') {
+              const extractedValues = input.value
+                .filter((obj: any) => obj.value && obj.value.toString().trim() !== '')
+                .map((obj: any) => ({
+                  name: obj.name,
+                  value: obj.value
+                }));
+              
+              if (extractedValues.length > 0) {
+                responses[input.name] = extractedValues;
+              }
+            } 
+            else {
+              const filteredArray = input.value.filter((val: any) => 
+                val !== null && val !== undefined && val.toString().trim() !== ''
+              );
+              
+              if (filteredArray.length > 0) {
+                responses[input.name] = filteredArray;
+              }
             }
           } 
-          else {
-            const filteredArray = input.value.filter((val: any) => 
-              val !== null && val !== undefined && val.toString().trim() !== ''
-            );
-            
-            if (filteredArray.length > 0) {
-              responses[input.name] = filteredArray;
-            }
+          else if (input.value.toString().trim() !== '') {
+            responses[input.name] = input.value;
           }
-        } 
-        else if (input.value.toString().trim() !== '') {
-          responses[input.name] = input.value;
         }
-      }
+      });
     });
-  });
-  return responses;
-}
+    return responses;
+  }
 
   async send(response:any) {
     const endTime = new Date();
@@ -149,19 +152,33 @@ export class TangyFormsPlayerComponent implements OnInit {
       duration: duration,
       completion: this.formSubmitted,
       extensions: {
-        "https://tangerine.lrs.io/xapi/survey-response": tangyResult
+        [`${this.endpoint}/survey-response`]: tangyResult
       }
     }
-    const statement = this.xapiService.buildXapiStatementFromForm(result, {name: "John Doe", email:"john.doe@example.com"}, response.formId,
-  response.collection,
-  'Tangy Forms Submission', this.lang);
-    await this.xapiService.sendStatement(statement);
+    const statement = this.xapiService.buildXapiStatementFromForm(result,
+      {
+        name: this.actor || "John Doe",
+        email: this.mailto || "john.doe@example.com"
+      },
+      response.formId,
+      response.collection,
+      'Tangy Forms Submission',
+      this.lang,
+      this.endpoint
+    );
+    await this.xapiService.sendStatement(statement, this.endpoint);
   }
 
   async ngOnInit(): Promise<any> {
     this.startTime = new Date();
     this.formSubmitted = false;  
     this.window = window;
+
+     this.route.queryParamMap.subscribe((query) => {
+      this.actor = query.get('actor') || '';
+      this.mailto = query.get('mailto') || '';
+      this.endpoint = query.get('endpoint') || '';
+    });
 
     // Loading the formResponse from a case must happen before rendering the innerHTML
     let formResponse;
@@ -277,7 +294,6 @@ export class TangyFormsPlayerComponent implements OnInit {
       });
     }
   }
-
 
   // Prevent parallel saves which leads to race conditions. Only save the first and then last state of the store.
   // Everything else in between we can ignore.

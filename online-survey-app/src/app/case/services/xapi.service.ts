@@ -25,9 +25,9 @@ export class XapiService {
   activityId: string,
   activityName: string,
   activityDesc: string,
-  lang: string
+  lang: string,
+  lrsEndpointUrl: string
 ): any {
-  const extensionsUrl = 'https://tangerine.lrs.io/xapi/survey';
   const statement = {
     actor: {
       objectType: 'Agent',
@@ -49,7 +49,7 @@ export class XapiService {
     result: {...result},
     context: {
       extensions: {
-        [extensionsUrl]: result.formData
+        [`${lrsEndpointUrl}/survey`]: result.formData
       }
     },
     timestamp: new Date().toISOString()
@@ -59,11 +59,11 @@ export class XapiService {
 }
 
 
-  async sendStatement(statement: any) {
+  async sendStatement(statement: any, lrsEndpointUrl: string) {
     const headers = this.getHeaders();
      if (navigator.onLine) {
       try {
-        await this.http.post(this.lrsEndpoint, statement, { headers }).toPromise();
+        await this.http.post(lrsEndpointUrl || this.lrsEndpoint, statement, { headers }).toPromise();
       } catch (err) {
         console.warn('Failed to send, saving offline', err);
         await this.dbService.addStatement(statement);
