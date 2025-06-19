@@ -31,9 +31,11 @@ export class TangyFormsPlayerComponent implements OnInit {
   startTime!: Date;
   formSubmitted: boolean = false;
   lang = localStorage.getItem('tangerine-language') || 'en';
-  actor: string = "John Doe";
-  mailto: string = "mailto:john.doe@example.com";
-  endpoint: string = "https://tangerine.lrs.io/xapi";
+  actor: string;
+  mailto: string;
+  endpoint: string;
+  auth: string[];
+  private onlineListener = () => this.trySync();
    
 
   throttledSaveLoaded
@@ -47,6 +49,7 @@ export class TangyFormsPlayerComponent implements OnInit {
     private httpClient:HttpClient,
     private caseService: CaseService,
     private tangyFormService: TangyFormService
+    
   ) { 
     this.router.events.subscribe(async (event) => {
         this.formId = this.route.snapshot.paramMap.get('formId');
@@ -89,14 +92,13 @@ export class TangyFormsPlayerComponent implements OnInit {
         timestamp: endTime.toISOString()
       };
 
-      this.xapiService.sendStatement(statement, this.endpoint).then(() => {
+      this.xapiService.sendStatement(statement).then(() => {
         console.log('xAPI statement sent successfully');
       }).catch((error) => {
         console.error('Error sending xAPI statement:', error);
       });
     }
   }
-
 
   msToISO8601Duration(ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
@@ -157,8 +159,8 @@ export class TangyFormsPlayerComponent implements OnInit {
     }
     const statement = this.xapiService.buildXapiStatementFromForm(result,
       {
-        name: this.actor || "John Doe",
-        email: this.mailto || "john.doe@example.com"
+        name: this.actor,
+        email: this.mailto
       },
       response.formId,
       response.collection,
@@ -166,18 +168,28 @@ export class TangyFormsPlayerComponent implements OnInit {
       this.lang,
       this.endpoint
     );
-    await this.xapiService.sendStatement(statement, this.endpoint);
+    await this.xapiService.sendStatement(statement);
   }
 
   async ngOnInit(): Promise<any> {
     this.startTime = new Date();
     this.formSubmitted = false;  
     this.window = window;
+    this.route.queryParamMap.subscribe((query) => {
+      this.actor = query.get('actor') || 'John Doe';
+      this.mailto = query.get('mailto') || 'mailto:john.doe@example.com';
+      this.endpoint = query.get('endpoint') || 'https://tangerine.lrs.io/xapi';
+      const authRaw = query.get('auth');
 
-     this.route.queryParamMap.subscribe((query) => {
-      this.actor = query.get('actor') || '';
-      this.mailto = query.get('mailto') || '';
-      this.endpoint = query.get('endpoint') || '';
+      try {
+        this.auth = authRaw ? JSON.parse(decodeURIComponent(authRaw)) : ["chimp", "chimpoo"];
+      } catch (e) {
+        console.warn('Invalid auth format in URL. Using default.');
+        this.auth = ["chimp", "chimpoo"];
+      }
+
+      console.log("Auth values:", this.auth); // ["userId", "password"]
+
     });
 
     // Loading the formResponse from a case must happen before rendering the innerHTML
@@ -293,6 +305,20 @@ export class TangyFormsPlayerComponent implements OnInit {
         }
       });
     }
+
+     if (navigator.onLine) {
+      this.trySync();
+    }
+
+    window.addEventListener('online', this.onlineListener);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('online', this.onlineListener);
+  }
+
+  private trySync(): void {
+    this.xapiService.syncStoredStatements(this.endpoint, this.auth);
   }
 
   // Prevent parallel saves which leads to race conditions. Only save the first and then last state of the store.
