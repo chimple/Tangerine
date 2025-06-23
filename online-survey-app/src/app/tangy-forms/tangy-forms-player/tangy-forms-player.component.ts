@@ -183,7 +183,7 @@ export class TangyFormsPlayerComponent implements OnInit {
       const authRaw = query.get('auth');
 
       try {
-        this.auth = authRaw ? JSON.parse(decodeURIComponent(authRaw)) : environment.auth;
+        this.auth = authRaw ? JSON.parse(decodeURIComponent(authRaw)) : JSON.parse(environment.auth);
       } catch (e) {
         console.warn('Invalid auth format in URL. Using default.');
         this.auth = JSON.parse(environment.auth);
