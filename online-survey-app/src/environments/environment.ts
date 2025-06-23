@@ -4,10 +4,6 @@
 
 export const environment = {
   production: false,
-  actor: "John Doe",
-  mailTo: "mailto:john.doe@example.com",
-  endpoint: "https://tangerine.lrs.io/xapi",
-  auth:  ["chimp", "chimpoo"]
 };
 
 /*
