@@ -3,7 +3,11 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  actor: "John Doe",
+  mailTo: "mailto:john.doe@example.com",
+  endpoint: "https://tangerine.lrs.io/xapi",
+  auth:  ["chimp", "chimpoo"]
 };
 
 /*
