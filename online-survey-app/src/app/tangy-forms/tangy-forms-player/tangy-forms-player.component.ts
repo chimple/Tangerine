@@ -5,6 +5,7 @@ import { FormsService } from 'src/app/shared/_services/forms-service.service';
 import { CaseService } from 'src/app/case/services/case.service';
 import { TangyFormService } from '../tangy-form.service';
 import { XapiService } from 'src/app/case/services/xapi.service';
+import { environment } from 'src/environments/environment';
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds));
 
 @Component({
@@ -176,19 +177,19 @@ export class TangyFormsPlayerComponent implements OnInit {
     this.formSubmitted = false;  
     this.window = window;
     this.route.queryParamMap.subscribe((query) => {
-      this.actor = query.get('actor') || 'John Doe';
-      this.mailto = query.get('mailto') || 'mailto:john.doe@example.com';
-      this.endpoint = query.get('endpoint') || 'https://tangerine.lrs.io/xapi';
+      this.actor = query.get('actor') || environment.actor;
+      this.mailto = query.get('mailto') || environment.mailTo;
+      this.endpoint = query.get('endpoint') || environment.endpoint;
       const authRaw = query.get('auth');
 
       try {
-        this.auth = authRaw ? JSON.parse(decodeURIComponent(authRaw)) : ["chimp", "chimpoo"];
+        this.auth = authRaw ? JSON.parse(decodeURIComponent(authRaw)) : environment.auth;
       } catch (e) {
         console.warn('Invalid auth format in URL. Using default.');
-        this.auth = ["chimp", "chimpoo"];
+        this.auth = JSON.parse(environment.auth);
       }
 
-      console.log("Auth values:", this.auth); // ["userId", "password"]
+      console.log("Auth values:", this.auth);
 
     });
 
