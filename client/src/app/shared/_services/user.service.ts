@@ -581,41 +581,34 @@ export class UserService {
   /**
    *  if developing locally, pull current user from the cache...
    */
-  getCurrentUser():string {
-    // First, check the in-memory variable.
-    if (this._currentUser) {
-      return this._currentUser;
+  getCurrentUser(): string {
+    if (window.location.hostname.includes('tunnelto') || window.location.hostname.includes('ngrok') || window.location.hostname.includes('localhost')) {
+      return localStorage.getItem('currentUser')
+    } else {
+      return this._currentUser
     }
-    // Then, check localStorage for persistence.
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      return storedUser;
-    }
-    // If not found anywhere, return empty.
-    return '';
+
+
+    // return window.location.hostname === 'localhost'
+    //   ? localStorage.getItem('currentUser')
+    //   : this._currentUser
   }
 
-  async setCurrentUser(username):Promise<string> {
+  async setCurrentUser(username): Promise<string> {
     // Note: Unless developing locally, we store user session information in memory so we don't for example put the
     // contents of the lockbox in an unencrypted form on disk in localStorage/etc. Putting currentUser in memory
     // guarantees that if we reload the user will be logged out as opposed to being logged in but not having access
     // to the lockbox contents, thus not actually having access to the database.
-    
-    // Always store in localStorage for persistence in non-Cordova environments and when specifically on local dev hostnames.
-    // We will also store in localStorage when in Cordova for persistence there.
-    if (!window['isCordovaApp'] || window.location.hostname.includes('tunnelto') || window.location.hostname.includes('ngrok') || window.location.hostname.includes('localhost')) {
-       localStorage.setItem('currentUser', username);
-    } else if (window['isCordovaApp']) {
-       // Also store in localStorage for persistence in Cordova environment
-       localStorage.setItem('currentUser', username);
+    if (
+      window.location.hostname.includes("tunnelto") || window.location.hostname.includes("ngrok") || window.location.hostname.includes("localhost")
+    ) {
+      localStorage.setItem("currentUser", username);
+    } else {
+      this._currentUser = username;
     }
-    
-    // Always update in-memory variable for immediate access
-    this._currentUser = username;
-    
-    window['currentUser'] = username;
-    this.profile = await this.getUserProfile(); // These might rely on currentUser being set immediately
-    this.roles = this.getRoles(); // These might rely on currentUser being set immediately
+    window["currentUser"] = username;
+    this.profile = await this.getUserProfile();
+    this.roles = this.getRoles();
     return username;
   }
 
