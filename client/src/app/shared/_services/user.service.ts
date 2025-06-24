@@ -581,7 +581,7 @@ export class UserService {
   /**
    *  if developing locally, pull current user from the cache...
    */
-  getCurrentUser(): string {
+  getCurrentUser():string {
     if (window.location.hostname.includes('tunnelto') || window.location.hostname.includes('ngrok') || window.location.hostname.includes('localhost')) {
       return localStorage.getItem('currentUser')
     } else {
@@ -594,22 +594,20 @@ export class UserService {
     //   : this._currentUser
   }
 
-  async setCurrentUser(username): Promise<string> {
+  async setCurrentUser(username):Promise<string> {
     // Note: Unless developing locally, we store user session information in memory so we don't for example put the
     // contents of the lockbox in an unencrypted form on disk in localStorage/etc. Putting currentUser in memory
     // guarantees that if we reload the user will be logged out as opposed to being logged in but not having access
     // to the lockbox contents, thus not actually having access to the database.
-    if (
-      window.location.hostname.includes("tunnelto") || window.location.hostname.includes("ngrok") || window.location.hostname.includes("localhost")
-    ) {
-      localStorage.setItem("currentUser", username);
+    if (window.location.hostname.includes('tunnelto') || window.location.hostname.includes('ngrok') || window.location.hostname.includes('localhost')) {
+      localStorage.setItem('currentUser', username)
     } else {
-      this._currentUser = username;
+      this._currentUser = username
     }
-    window["currentUser"] = username;
-    this.profile = await this.getUserProfile();
-    this.roles = this.getRoles();
-    return username;
+    window['currentUser'] = username
+    this.profile = await this.getUserProfile()
+    this.roles = this.getRoles()
+    return username
   }
 
   async getSharedDBDocCount() {
