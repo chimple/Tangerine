@@ -176,7 +176,7 @@ export class TangyFormsPlayerComponent implements OnInit {
 
       // here we parse the auth and actor query parameter
       try {
-        this.auth = decodeURIComponent(authRaw);
+        this.auth = JSON.parse(decodeURIComponent(authRaw))[0];
         this.actor = JSON.parse(decodeURIComponent(actorRaw));        
       } catch (e) {
         console.warn('Error parsing auth or actor query parameters:', e);
@@ -364,5 +364,4 @@ export class TangyFormsPlayerComponent implements OnInit {
       console.error(error);
     }
   }
-
 }

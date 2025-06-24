@@ -10,10 +10,9 @@ export class XapiService {
   constructor(private http: HttpClient, private dbService: IndexedDBService) { }
 
   private getHeaders(auth: string): HttpHeaders {
-    console.log('Using auth:', btoa(auth), JSON.parse(auth)[0]);
     return new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': 'Basic ' + btoa(JSON.parse(auth)[0])
+      'Authorization': 'Basic ' + btoa(auth)
     });
   }
 
