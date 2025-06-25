@@ -1,11 +1,11 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, ElementRef, OnInit, ViewChild, Input, HostListener } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsService } from 'src/app/shared/_services/forms-service.service';
 import { CaseService } from 'src/app/case/services/case.service';
 import { TangyFormService } from '../tangy-form.service';
-import { XapiService } from 'src/app/case/services/xapi.service';
-const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds));
+
+const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
 
 @Component({
   selector: 'app-tangy-forms-player',
@@ -28,14 +28,10 @@ export class TangyFormsPlayerComponent implements OnInit {
   caseEventId: string;
   eventFormId: string;
   window: any;
-  startTime!: Date;
-  formSubmitted: boolean = false;
-  lang = localStorage.getItem('tangerine-language');
   actor: Record<string, any>;
   endpoint: string;
   auth: string;
   registration: string;
-  private onlineListener = () => this.trySync();
    
 
   throttledSaveLoaded
@@ -44,7 +40,6 @@ export class TangyFormsPlayerComponent implements OnInit {
   constructor(
     private route: ActivatedRoute, 
     private formsService: FormsService,
-    private xapiService: XapiService,
     private router: Router, 
     private httpClient:HttpClient,
     private caseService: CaseService,
@@ -59,114 +54,10 @@ export class TangyFormsPlayerComponent implements OnInit {
     });
   }
 
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(event: BeforeUnloadEvent) {
-    if (!this.formSubmitted && this.startTime) {
-      const endTime = new Date();
-      const duration = this.msToISO8601Duration(endTime.getTime() - this.startTime.getTime());
-      const statement = {
-        actor: this.actor,
-        verb: {
-          id: "http://adlnet.gov/expapi/verbs/attempted",
-          display: { [this.lang]: "attempted" }
-        },
-        object: {
-          id: `http://example.com/forms/${this.formId}`,
-          objectType: "Activity",
-          definition: {
-            name: { lang: "Tangy Survey Form Response" },
-            description: { [this.lang]: "Survey Form Assessment" }
-          }
-        },
-        result: {
-          completion: false,
-          success: false,
-          duration: duration,
-          response: "Form was started but not submitted",
-        },
-        timestamp: endTime.toISOString()
-      };
-
-      this.xapiService.sendStatement(statement, this.auth, this.endpoint).then(() => {
-        console.log('xAPI statement sent successfully');
-      }).catch((error) => {
-        console.error('Error sending xAPI statement:', error);
-      });
-    }
-  }
-
-  msToISO8601Duration(ms: number): string {
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `PT${hours > 0 ? hours + 'H' : ''}${minutes > 0 ? minutes + 'M' : ''}${seconds > 0 ? seconds + 'S' : ''}`;
-  }
-
-  extractTangyResponseForXAPI(tangyResponse: any) {
-    const responses: any = {};  
-    tangyResponse.items.forEach((item: any) => {
-      item.inputs.forEach((input: any) => {
-        if (input.value) {
-          if (Array.isArray(input.value)) {
-            if (input.value.length > 0 && typeof input.value[0] === 'object') {
-              const extractedValues = input.value
-                .filter((obj: any) => obj.value && obj.value.toString().trim() !== '')
-                .map((obj: any) => ({
-                  name: obj.name,
-                  value: obj.value
-                }));
-              
-              if (extractedValues.length > 0) {
-                responses[input.name] = extractedValues;
-              }
-            } 
-            else {
-              const filteredArray = input.value.filter((val: any) => 
-                val !== null && val !== undefined && val.toString().trim() !== ''
-              );
-              
-              if (filteredArray.length > 0) {
-                responses[input.name] = filteredArray;
-              }
-            }
-          } 
-          else if (input.value.toString().trim() !== '') {
-            responses[input.name] = input.value;
-          }
-        }
-      });
-    });
-    return responses;
-  }
-
-  async send(response:any) {
-    const endTime = new Date();
-    const duration = this.msToISO8601Duration(endTime.getTime() - this.startTime.getTime());
-    const tangyResult = this.extractTangyResponseForXAPI(response);
-    const result = {
-      response: "Form submitted successfully",
-      duration: duration,
-      completion: this.formSubmitted,
-      extensions: {
-        [`${this.endpoint}/survey-response`]: tangyResult
-      }
-    }
-    const statement = this.xapiService.buildXapiStatementFromForm(result,
-      this.actor,
-      response.formId,
-      response.collection,
-      'Tangy Forms Submission',
-      this.lang,
-      this.endpoint
-    );
-    await this.xapiService.sendStatement(statement, this.auth, this.endpoint);
-  }
-
   async ngOnInit(): Promise<any> {
-    this.startTime = new Date();
-    this.formSubmitted = false;  
     this.window = window;
+
+    // we are using the query parameters to get the actor and auth information
     this.route.queryParamMap.subscribe((query) => {
       const actorRaw = query.get('actor');
       const authRaw = query.get('auth');
@@ -250,22 +141,6 @@ export class TangyFormsPlayerComponent implements OnInit {
       tangyForm.addEventListener('after-submit', async (event) => {
         event.preventDefault();
         let response = event.target.store.getState();
-        const res:any = {};
-        this.formSubmitted = true;
-        res.formId = response._id;
-        res.collection = response.collection;
-        res.items = response.items.map((item) => {
-          return {
-            inputs: item.inputs.map((input) => {
-              return {
-                name: input.name,
-                label: input.label,
-                value: input.value
-              }
-            })
-          }
-        });
-        await this.send(res);
         await this.saveResponse(response)
         if (this.caseService && this.caseService.caseEvent && this.caseService.eventForm) {
           this.caseService.markEventFormComplete(this.caseService.caseEvent.id, this.caseService.eventForm.id)
@@ -297,22 +172,9 @@ export class TangyFormsPlayerComponent implements OnInit {
         }
       });
     }
-
-     if (navigator.onLine) {
-      this.trySync();
-    }
-
-    window.addEventListener('online', this.onlineListener);
   }
 
-  ngOnDestroy(): void {
-    window.removeEventListener('online', this.onlineListener);
-  }
-
-  private trySync(): void {
-    this.xapiService.syncStoredStatements(this.endpoint, this.auth);
-  }
-
+  
   // Prevent parallel saves which leads to race conditions. Only save the first and then last state of the store.
   // Everything else in between we can ignore.
   async throttledSaveResponse(response) {
