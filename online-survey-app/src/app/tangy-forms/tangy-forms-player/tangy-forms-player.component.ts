@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsService } from 'src/app/shared/_services/forms-service.service';
 import { CaseService } from 'src/app/case/services/case.service';
 import { TangyFormService } from '../tangy-form.service';
+import { Agent } from '../../model/xapi-agent.model';
 
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
 
@@ -28,10 +29,10 @@ export class TangyFormsPlayerComponent implements OnInit {
   caseEventId: string;
   eventFormId: string;
   window: any;
-  actor: Record<string, any>;
-  endpoint: string;
-  auth: string;
-  registration: string;
+  xapiActor: Agent;
+  xapiEndpoint: string;
+  xapiAuth: string;
+  xapiRegistration: string;
    
 
   throttledSaveLoaded
@@ -62,13 +63,21 @@ export class TangyFormsPlayerComponent implements OnInit {
       const actorRaw = query.get('actor');
       const authRaw = query.get('auth');
 
-      this.endpoint = query.get('endpoint');
-      this.registration = query.get('registration');
+      this.xapiEndpoint = query.get('endpoint');
+      this.xapiRegistration = query.get('registration');
 
       // here we parse the auth and actor query parameter
       try {
-        this.auth = JSON.parse(decodeURIComponent(authRaw))[0];
-        this.actor = JSON.parse(decodeURIComponent(actorRaw));        
+        this.xapiAuth = JSON.parse(authRaw)[0];
+        const xapiActorData = JSON.parse(actorRaw);
+        this.xapiActor = new Agent(
+          xapiActorData.name,
+          xapiActorData.mbox,
+          xapiActorData.mbox_sha1sum,
+          xapiActorData.openid,
+          xapiActorData.account
+        );
+
       } catch (e) {
         console.warn('Error parsing auth or actor query parameters:', e);
       }
