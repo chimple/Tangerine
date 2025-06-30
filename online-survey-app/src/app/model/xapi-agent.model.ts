@@ -1,5 +1,4 @@
-export interface IAgent {
-  objectType: 'Agent';
+export interface IActorBase {
   name?: string;
   mbox?: string;
   mbox_sha1sum?: string;
@@ -9,8 +8,11 @@ export interface IAgent {
     name: string;
   };
 }
+export interface IAgent extends IActorBase {
+  objectType: 'Agent';
+}
 
-export class Agent implements IAgent {
+export class XapiAgent implements IAgent {
   objectType: 'Agent' = 'Agent';
 
   constructor(

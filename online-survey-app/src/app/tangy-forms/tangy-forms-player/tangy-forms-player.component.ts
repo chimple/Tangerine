@@ -4,7 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsService } from 'src/app/shared/_services/forms-service.service';
 import { CaseService } from 'src/app/case/services/case.service';
 import { TangyFormService } from '../tangy-form.service';
-import { Agent } from '../../model/xapi-agent.model';
+import { XapiAgent } from '../../model/xapi-agent.model';
+import { XapiGroup } from 'src/app/model/xapi-group.model';
 
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
 
@@ -29,10 +30,12 @@ export class TangyFormsPlayerComponent implements OnInit {
   caseEventId: string;
   eventFormId: string;
   window: any;
-  xapiActor: Agent;
+  xapiActor: XapiAgent | XapiGroup;
   xapiEndpoint: string;
   xapiAuth: string;
   xapiRegistration: string;
+  launchError = false;
+  launchErrorMessage: string
    
 
   throttledSaveLoaded
@@ -70,7 +73,7 @@ export class TangyFormsPlayerComponent implements OnInit {
       try {
         this.xapiAuth = JSON.parse(authRaw)[0];
         const xapiActorData = JSON.parse(actorRaw);
-        this.xapiActor = new Agent(
+        this.xapiActor = new XapiAgent(
           xapiActorData.name,
           xapiActorData.mbox,
           xapiActorData.mbox_sha1sum,
@@ -79,7 +82,9 @@ export class TangyFormsPlayerComponent implements OnInit {
         );
 
       } catch (e) {
-        console.warn('Error parsing auth or actor query parameters:', e);
+        this.launchError = true;
+        this.launchErrorMessage =
+        'This form was opened with incomplete link information. You can continue, but your progress might not be saved properly.';
       }
     });
 
