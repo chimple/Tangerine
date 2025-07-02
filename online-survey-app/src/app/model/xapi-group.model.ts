@@ -32,17 +32,9 @@ export class XapiGroup implements IGroup {
     const name = Array.isArray(raw.name) ? raw.name[0] : raw.name;
     const mbox = Array.isArray(raw.mbox) ? raw.mbox[0] : raw.mbox;
 
-    const member: XapiAgent[] = (raw.member || []).map((m: any) => {
-      const memberName = Array.isArray(m.name) ? m.name[0] : m.name;
-      const memberMbox = Array.isArray(m.mbox) ? m.mbox[0] : m.mbox;
-      return new XapiAgent(
-        memberName,
-        memberMbox,
-        m.mbox_sha1sum,
-        m.openid,
-        m.account
-      );
-    });
+    const member = (raw.member || []).map((m: any) =>
+      XapiAgent.fromRaw(m)
+    );
 
     return new XapiGroup(
       name,

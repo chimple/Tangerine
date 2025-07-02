@@ -23,6 +23,13 @@ export class XapiAgent implements IAgent {
     public account?: { homePage: string; name: string }
   ) {}
 
+  static fromRaw(raw: any): XapiAgent {
+    const name = Array.isArray(raw.name) ? raw.name[0] : raw.name;
+    const mbox = Array.isArray(raw.mbox) ? raw.mbox[0] : raw.mbox;
+
+    return new XapiAgent(name, mbox, raw.mbox_sha1sum, raw.openid, raw.account);
+  }
+
   toJSON(): IAgent {
     return {
       objectType: 'Agent',

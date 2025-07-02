@@ -30,12 +30,10 @@ export class TangyFormsPlayerComponent implements OnInit {
   caseEventId: string;
   eventFormId: string;
   window: any;
-  xapiActor: XapiAgent | XapiGroup;
-  xapiEndpoint: string;
-  xapiAuth: string;
-  xapiRegistration: string;
-  launchError = false;
-  launchErrorMessage: string
+  xapiActor?: XapiAgent | XapiGroup;
+  xapiEndpoint?: string;
+  xapiAuth?: string;
+  xapiRegistration?: string;
    
 
   throttledSaveLoaded
@@ -70,21 +68,12 @@ export class TangyFormsPlayerComponent implements OnInit {
       this.xapiRegistration = query.get('registration');
 
       // here we parse the auth and actor query parameter
-      try {
-        this.xapiAuth = JSON.parse(authRaw)[0];
+      if(actorRaw && authRaw) {
+         this.xapiAuth = JSON.parse(authRaw)[0];
         const xapiActorData = JSON.parse(actorRaw);
-        this.xapiActor = new XapiAgent(
-          xapiActorData.name,
-          xapiActorData.mbox,
-          xapiActorData.mbox_sha1sum,
-          xapiActorData.openid,
-          xapiActorData.account
-        );
-
-      } catch (e) {
-        this.launchError = true;
-        this.launchErrorMessage =
-        'This form was opened with incomplete link information. You can continue, but your progress might not be saved properly.';
+        this.xapiActor = xapiActorData.objectType === 'Group'
+          ? XapiGroup.fromRaw(xapiActorData)
+          : XapiAgent.fromRaw(xapiActorData);
       }
     });
 
