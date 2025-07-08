@@ -51,6 +51,7 @@ export class TangyFormsPlayerComponent implements OnInit {
     private httpClient:HttpClient,
     private caseService: CaseService,
     private tangyFormService: TangyFormService
+    
   ) { 
     this.router.events.subscribe(async (event) => {
         this.formId = this.route.snapshot.paramMap.get('formId');
