@@ -6,6 +6,7 @@ import { CaseService } from 'src/app/case/services/case.service';
 import { TangyFormService } from '../tangy-form.service';
 import { XapiService } from 'src/app/case/services/xapi.service';
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds));
+import { XAPIStatementBuilder } from '../../shared/classes/xapiStatementBuilder.class';
 
 @Component({
   selector: 'app-tangy-forms-player',
@@ -36,6 +37,7 @@ export class TangyFormsPlayerComponent implements OnInit {
   auth: string;
   registration: string;
   private onlineListener = () => this.trySync();
+  xapiStatementBuilder: XAPIStatementBuilder;
    
 
   throttledSaveLoaded
@@ -176,8 +178,15 @@ export class TangyFormsPlayerComponent implements OnInit {
 
       // here we parse the auth and actor query parameter
       try {
-        this.auth = JSON.parse(decodeURIComponent(authRaw))[0];
-        this.actor = JSON.parse(decodeURIComponent(actorRaw));        
+        this.auth = JSON.parse(authRaw)[0];
+        this.actor = JSON.parse(actorRaw);
+        const xapiAgent = {
+          actor: this.actor,
+          endpoint: this.endpoint,
+          auth: this.auth,
+
+        }
+        this.xapiStatementBuilder = new XAPIStatementBuilder(xapiAgent);         
       } catch (e) {
         console.warn('Error parsing auth or actor query parameters:', e);
       }
@@ -250,6 +259,8 @@ export class TangyFormsPlayerComponent implements OnInit {
       tangyForm.addEventListener('after-submit', async (event) => {
         event.preventDefault();
         let response = event.target.store.getState();
+        const statement = this.xapiStatementBuilder.buildStatements(response);
+        console.log('xapiStatement',statement);
         const res:any = {};
         this.formSubmitted = true;
         res.formId = response._id;
@@ -265,7 +276,7 @@ export class TangyFormsPlayerComponent implements OnInit {
             })
           }
         });
-        await this.send(res);
+        // await this.send(res);
         await this.saveResponse(response)
         if (this.caseService && this.caseService.caseEvent && this.caseService.eventForm) {
           this.caseService.markEventFormComplete(this.caseService.caseEvent.id, this.caseService.eventForm.id)
