@@ -6,6 +6,7 @@ import { CaseService } from 'src/app/case/services/case.service';
 import { TangyFormService } from '../tangy-form.service';
 import { XapiAgent } from '../../model/xapi-agent.model';
 import { XapiGroup } from 'src/app/model/xapi-group.model';
+import { XapiActorBase } from 'src/app/model/xapi-actor-base.model';
 
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
 
@@ -69,11 +70,9 @@ export class TangyFormsPlayerComponent implements OnInit {
 
       // here we parse the auth and actor query parameter
       if(actorRaw && authRaw) {
-         this.xapiAuth = JSON.parse(authRaw)[0];
+        this.xapiAuth = authRaw;
         const xapiActorData = JSON.parse(actorRaw);
-        this.xapiActor = xapiActorData.objectType === 'Group'
-          ? XapiGroup.fromRaw(xapiActorData)
-          : XapiAgent.fromRaw(xapiActorData);
+        this.xapiActor = XapiActorBase.fromRaw(xapiActorData);
       }
     });
 

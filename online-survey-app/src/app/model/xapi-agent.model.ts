@@ -1,19 +1,7 @@
-export interface IActorBase {
-  name?: string;
-  mbox?: string;
-  mbox_sha1sum?: string;
-  openid?: string;
-  account?: {
-    homePage: string;
-    name: string;
-  };
-}
-export interface IAgent extends IActorBase {
-  objectType: 'Agent';
-}
+import { XapiActorBase } from './xapi-actor-base.model';
 
-export class XapiAgent implements IAgent {
-  objectType: 'Agent' = 'Agent';
+export class XapiAgent extends XapiActorBase {
+  readonly objectType = 'Agent';
 
   constructor(
     public name?: string,
@@ -21,16 +9,15 @@ export class XapiAgent implements IAgent {
     public mbox_sha1sum?: string,
     public openid?: string,
     public account?: { homePage: string; name: string }
-  ) {}
-
-  static fromRaw(raw: any): XapiAgent {
-    const name = Array.isArray(raw.name) ? raw.name[0] : raw.name;
-    const mbox = Array.isArray(raw.mbox) ? raw.mbox[0] : raw.mbox;
-
-    return new XapiAgent(name, mbox, raw.mbox_sha1sum, raw.openid, raw.account);
+  ) {
+    super(name, mbox, mbox_sha1sum, openid, account);
   }
 
-  toJSON(): IAgent {
+  static fromRaw(raw: any): XapiAgent {
+    return new XapiAgent(raw.name, raw.mbox, raw.mbox_sha1sum, raw.openid, raw.account);
+  }
+
+  toJSON() {
     return {
       objectType: 'Agent',
       name: this.name,

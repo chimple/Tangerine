@@ -1,12 +1,7 @@
-import { XapiAgent, IActorBase, IAgent } from './xapi-agent.model'; // adjust path if needed
+import { XapiActorBase } from "./xapi-actor-base.model";
+import { XapiAgent } from "./xapi-agent.model";
 
-
-export interface IGroup extends IActorBase {
-  objectType: 'Group';
-  member?: IAgent[];
-}
-
-export class XapiGroup implements IGroup {
+export class XapiGroup extends XapiActorBase {
   objectType: 'Group' = 'Group';
 
   constructor(
@@ -17,6 +12,7 @@ export class XapiGroup implements IGroup {
     public account?: { homePage: string; name: string },
     public member?: XapiAgent[]
   ) {
+    super(name, mbox, mbox_sha1sum, openid, account);
     const identifiers = [mbox, mbox_sha1sum, openid, account].filter(Boolean);
     if (identifiers.length > 1) {
       throw new Error('A Group can have only one identifier (or none for anonymous group).');
@@ -29,16 +25,13 @@ export class XapiGroup implements IGroup {
      * @returns An instance of XapiGroup.
      */
   static fromRaw(raw: any): XapiGroup {
-    const name = Array.isArray(raw.name) ? raw.name[0] : raw.name;
-    const mbox = Array.isArray(raw.mbox) ? raw.mbox[0] : raw.mbox;
-
     const member = (raw.member || []).map((m: any) =>
       XapiAgent.fromRaw(m)
     );
 
     return new XapiGroup(
-      name,
-      mbox,
+      raw.name,
+      raw.mbox,
       raw.mbox_sha1sum,
       raw.openid,
       raw.account,
@@ -50,7 +43,7 @@ export class XapiGroup implements IGroup {
      * Converts the XapiGroup instance to a JSON object.
      * @returns A JSON representation of the XapiGroup.
      */
-  toJSON(): IGroup {
+  toJSON() {
     return {
       objectType: 'Group',
       name: this.name,
