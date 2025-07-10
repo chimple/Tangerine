@@ -2,7 +2,7 @@ import { XapiActorBase } from "./xapi-actor-base.model";
 import { XapiAgent } from "./xapi-agent.model";
 
 export class XapiGroup extends XapiActorBase {
-  objectType: 'Group' = 'Group';
+  readonly objectType: 'Group' = 'Group';
 
   constructor(
     public name?: string,
