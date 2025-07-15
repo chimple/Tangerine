@@ -70,7 +70,7 @@ export class TangyFormsPlayerComponent implements OnInit {
 
       // here we parse the auth and actor query parameter
       if(actorRaw && authRaw) {
-        this.xapiAuth = authRaw;
+        this.xapiAuth = JSON.parse(authRaw);
         const xapiActorData = JSON.parse(actorRaw);
         this.xapiActor = XapiActorBase.fromRaw(xapiActorData);
       }
