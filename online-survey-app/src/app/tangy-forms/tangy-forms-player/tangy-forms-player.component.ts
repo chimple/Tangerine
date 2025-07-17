@@ -146,23 +146,18 @@ export class TangyFormsPlayerComponent implements OnInit {
   async send(response:any) {
     const endTime = new Date();
     const duration = this.msToISO8601Duration(endTime.getTime() - this.startTime.getTime());
-    const tangyResult = this.extractTangyResponseForXAPI(response);
-    const result = {
-      response: "Form submitted successfully",
+    const builderStatementsArgs = {
+      formData: response,
+      activityId: response._id,
+      activityName: response.collection.name || 'Tangy Form Submission',
       duration: duration,
-      completion: this.formSubmitted,
-      extensions: {
-        [`${this.endpoint}/survey-response`]: tangyResult
-      }
+      activityDesc: response.collection.description || 'Tangy Form Assessment',
+      lang: this.lang,
+      formSubmitted: this.formSubmitted
     }
-    const statement = this.xapiService.buildXapiStatementFromForm(result,
-      this.actor,
-      response.formId,
-      response.collection,
-      'Tangy Forms Submission',
-      this.lang,
-      this.endpoint
-    );
+    const statement = this.xapiStatementBuilder.buildStatements(builderStatementsArgs);
+    console.log('>>>>>',statement);
+    console.log("auth>>>>>", this.auth);
     await this.xapiService.sendStatement(statement, this.auth, this.endpoint);
   }
 
@@ -176,10 +171,10 @@ export class TangyFormsPlayerComponent implements OnInit {
 
       this.endpoint = query.get('endpoint');
       this.registration = query.get('registration');
-
+      console.log('???3545',this.endpoint, actorRaw, authRaw);
       // here we parse the auth and actor query parameter
       try {
-        this.auth = JSON.parse(authRaw)[0];
+        this.auth = JSON.parse(authRaw);
         this.actor = JSON.parse(actorRaw);
         const xapiAgent = {
           actor: this.actor,
@@ -260,24 +255,7 @@ export class TangyFormsPlayerComponent implements OnInit {
       tangyForm.addEventListener('after-submit', async (event) => {
         event.preventDefault();
         let response = event.target.store.getState();
-        const statement = this.xapiStatementBuilder.buildStatements(response);
-        console.log('xapiStatement',statement);
-        const res:any = {};
-        this.formSubmitted = true;
-        res.formId = response._id;
-        res.collection = response.collection;
-        res.items = response.items.map((item) => {
-          return {
-            inputs: item.inputs.map((input) => {
-              return {
-                name: input.name,
-                label: input.label,
-                value: input.value
-              }
-            })
-          }
-        });
-        // await this.send(res);
+        await this.send(response);
         await this.saveResponse(response)
         if (this.caseService && this.caseService.caseEvent && this.caseService.eventForm) {
           this.caseService.markEventFormComplete(this.caseService.caseEvent.id, this.caseService.eventForm.id)
