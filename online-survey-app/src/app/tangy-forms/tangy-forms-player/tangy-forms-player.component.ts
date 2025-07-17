@@ -156,8 +156,7 @@ export class TangyFormsPlayerComponent implements OnInit {
       formSubmitted: this.formSubmitted
     }
     const statement = this.xapiStatementBuilder.buildStatements(builderStatementsArgs);
-    console.log('>>>>>',statement);
-    console.log("auth>>>>>", this.auth);
+
     await this.xapiService.sendStatement(statement, this.auth, this.endpoint);
   }
 
@@ -171,7 +170,6 @@ export class TangyFormsPlayerComponent implements OnInit {
 
       this.endpoint = query.get('endpoint');
       this.registration = query.get('registration');
-      console.log('???3545',this.endpoint, actorRaw, authRaw);
       // here we parse the auth and actor query parameter
       try {
         this.auth = JSON.parse(authRaw);
