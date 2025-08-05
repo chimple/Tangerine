@@ -1,5 +1,9 @@
 # Start with docker-tangerine-base-image, which provides the core Tangerine apps.
 FROM tangerine/docker-tangerine-base-image:v3.8.0
+# Add this before any `apt-get update` command
+RUN sed -i 's|http://deb.debian.org|https://archive.debian.org|g' /etc/apt/sources.list && \
+    sed -i '/security.debian.org/d' /etc/apt/sources.list && \
+    echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
 
 RUN git config --global url."https://".insteadOf git://
 
