@@ -4,6 +4,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsService } from 'src/app/shared/_services/forms-service.service';
 import { CaseService } from 'src/app/case/services/case.service';
 import { TangyFormService } from '../tangy-form.service';
+import { XapiAgent } from '../../model/xapi-agent.model';
+import { XapiGroup } from 'src/app/model/xapi-group.model';
+import { XapiActorBase } from 'src/app/model/xapi-actor-base.model';
 
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
 
@@ -28,13 +31,18 @@ export class TangyFormsPlayerComponent implements OnInit {
   caseEventId: string;
   eventFormId: string;
   window: any;
+  xapiActor?: XapiAgent | XapiGroup;
+  xapiEndpoint?: string;
+  xapiAuth?: string;
+  xapiRegistration?: string;
+   
 
   throttledSaveLoaded
   throttledSaveFiring
   
   constructor(
     private route: ActivatedRoute, 
-    private formsService: FormsService, 
+    private formsService: FormsService,
     private router: Router, 
     private httpClient:HttpClient,
     private caseService: CaseService,
@@ -51,6 +59,23 @@ export class TangyFormsPlayerComponent implements OnInit {
 
   async ngOnInit(): Promise<any> {
     this.window = window;
+
+    // we are using the query parameters to get the actor and auth information
+    this.route.queryParamMap.subscribe((query) => {
+      const actorRaw = query.get('actor');
+      const authRaw = query.get('auth');
+
+      this.xapiEndpoint = query.get('endpoint');
+      this.xapiRegistration = query.get('registration');
+
+      // here we parse the auth and actor query parameter
+      if(actorRaw && authRaw) {
+        this.xapiAuth = authRaw;
+        const xapiActorData = JSON.parse(actorRaw);
+        this.xapiActor = XapiActorBase.fromRaw(xapiActorData);
+      }
+    });
+
 
     // Loading the formResponse from a case must happen before rendering the innerHTML
     let formResponse;
@@ -117,8 +142,7 @@ export class TangyFormsPlayerComponent implements OnInit {
 
       tangyForm.addEventListener('after-submit', async (event) => {
         event.preventDefault();
-
-        let response = event.target.store.getState()
+        let response = event.target.store.getState();
         await this.saveResponse(response)
         if (this.caseService && this.caseService.caseEvent && this.caseService.eventForm) {
           this.caseService.markEventFormComplete(this.caseService.caseEvent.id, this.caseService.eventForm.id)
@@ -152,7 +176,7 @@ export class TangyFormsPlayerComponent implements OnInit {
     }
   }
 
-
+  
   // Prevent parallel saves which leads to race conditions. Only save the first and then last state of the store.
   // Everything else in between we can ignore.
   async throttledSaveResponse(response) {
@@ -204,5 +228,4 @@ export class TangyFormsPlayerComponent implements OnInit {
       console.error(error);
     }
   }
-
 }
