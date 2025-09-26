@@ -7,6 +7,7 @@ import { TangyFormService } from '../tangy-form.service';
 import { XapiAgent } from '../../model/xapi-agent.model';
 import { XapiGroup } from 'src/app/model/xapi-group.model';
 import { XapiActorBase } from 'src/app/model/xapi-actor-base.model';
+import { TangyFormResponse, XapiStatement } from './tangy-forms-player.components.types';
 
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
 
@@ -35,6 +36,7 @@ export class TangyFormsPlayerComponent implements OnInit {
   xapiEndpoint?: string;
   xapiAuth?: string;
   xapiRegistration?: string;
+  xapiResponse: XapiStatement[] = [];
    
 
   throttledSaveLoaded
@@ -59,19 +61,17 @@ export class TangyFormsPlayerComponent implements OnInit {
 
   async ngOnInit(): Promise<any> {
     this.window = window;
-
     // we are using the query parameters to get the actor and auth information
     this.route.queryParamMap.subscribe((query) => {
       const actorRaw = query.get('actor');
       const authRaw = query.get('auth');
-
       this.xapiEndpoint = query.get('endpoint');
       this.xapiRegistration = query.get('registration');
 
       // here we parse the auth and actor query parameter
       if(actorRaw && authRaw) {
         this.xapiAuth = authRaw;
-        const xapiActorData = JSON.parse(actorRaw);
+        const xapiActorData = JSON.parse(actorRaw) || {actor: {}};
         this.xapiActor = XapiActorBase.fromRaw(xapiActorData);
       }
     });
@@ -139,11 +139,38 @@ export class TangyFormsPlayerComponent implements OnInit {
           await this.caseService.load(this.caseId);
         }
       })
-
+      tangyForm.addEventListener('TANGY_FORM_STATEMENT', async (event) => {
+        let response:TangyFormResponse = event.target.store.getState();
+        if (response && response.items) {
+          for (let item of response.items) {
+            if (item.inputs) {
+              for (let input of item.inputs) {
+                if (input.xapiStatement) {
+                  input.xapiStatement = {...input.xapiStatement, actor: this.xapiActor}
+                  this.xapiResponse.push(input.xapiStatement);
+                }
+              }
+            }
+          }
+        }
+      })
+      
       tangyForm.addEventListener('after-submit', async (event) => {
         event.preventDefault();
         let response = event.target.store.getState();
         await this.saveResponse(response)
+        if(this.xapiResponse && this.xapiResponse.length > 0 && this.xapiEndpoint && this.xapiAuth) {
+          for (let statement of this.xapiResponse) {
+            try {
+              // this xapiService will be a singleton service that handles sending xAPI statements to the LRS
+              // but for it not being built yet, it just a reference that wee need to build this service
+              // and handle errors and retries and batching
+              await this.xapiService.sendStatement(statement, this.xapiEndpoint, this.xapiAuth);
+            } catch (error) {
+              console.error("Error sending xAPI statement: ", error)
+            }
+          }
+        }
         if (this.caseService && this.caseService.caseEvent && this.caseService.eventForm) {
           this.caseService.markEventFormComplete(this.caseService.caseEvent.id, this.caseService.eventForm.id)
           await this.caseService.save()
