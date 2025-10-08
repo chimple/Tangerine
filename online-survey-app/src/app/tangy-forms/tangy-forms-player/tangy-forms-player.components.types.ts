@@ -93,11 +93,11 @@ export interface TangyInput {
 }
 
 export interface XapiStatement {
-    actor: {
-        mbox?: string,
-        name?: string,
-        objectType?: 'Agent' | 'Group'
-    },
+  actor: {
+      mbox?: string,
+      name?: string,
+      objectType?: 'Agent' | 'Group'
+  },
   verb: {
     id: string;
     display: {

@@ -8,6 +8,7 @@ import { XapiAgent } from '../../model/xapi-agent.model';
 import { XapiGroup } from 'src/app/model/xapi-group.model';
 import { XapiActorBase } from 'src/app/model/xapi-actor-base.model';
 import { TangyFormResponse, XapiStatement } from './tangy-forms-player.components.types';
+import { XapiService } from 'src/app/shared/_services/xapi.service';
 
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
 
@@ -48,7 +49,8 @@ export class TangyFormsPlayerComponent implements OnInit {
     private router: Router, 
     private httpClient:HttpClient,
     private caseService: CaseService,
-    private tangyFormService: TangyFormService
+    private tangyFormService: TangyFormService,
+    private xapiService: XapiService
   ) { 
     this.router.events.subscribe(async (event) => {
         this.formId = this.route.snapshot.paramMap.get('formId');
@@ -130,18 +132,9 @@ export class TangyFormsPlayerComponent implements OnInit {
 
     if (this.caseService) {
       tangyForm.addEventListener('TANGY_FORM_UPDATE', async (event) => {
-        let response = event.target.store.getState()
-        this.throttledSaveResponse(response)
-  
-        if (this.caseService.eventForm && !this.caseService.eventForm.formResponseId) {
-          this.caseService.eventForm.formResponseId = tangyForm.response._id;
-          await this.caseService.save();
-          await this.caseService.load(this.caseId);
-        }
-      })
-      tangyForm.addEventListener('TANGY_FORM_STATEMENT', async (event) => {
-        let response:TangyFormResponse = event.target.store.getState();
-        if (response && response.items) {
+        let response = event.target.store.getState();
+        this.xapiResponse = [];
+          if (response && response.items) {
           for (let item of response.items) {
             if (item.inputs) {
               for (let input of item.inputs) {
@@ -153,6 +146,14 @@ export class TangyFormsPlayerComponent implements OnInit {
             }
           }
         }
+
+        this.throttledSaveResponse(response)
+  
+        if (this.caseService.eventForm && !this.caseService.eventForm.formResponseId) {
+          this.caseService.eventForm.formResponseId = tangyForm.response._id;
+          await this.caseService.save();
+          await this.caseService.load(this.caseId);
+        }
       })
       
       tangyForm.addEventListener('after-submit', async (event) => {
@@ -162,9 +163,6 @@ export class TangyFormsPlayerComponent implements OnInit {
         if(this.xapiResponse && this.xapiResponse.length > 0 && this.xapiEndpoint && this.xapiAuth) {
           for (let statement of this.xapiResponse) {
             try {
-              // this xapiService will be a singleton service that handles sending xAPI statements to the LRS
-              // but for it not being built yet, it just a reference that wee need to build this service
-              // and handle errors and retries and batching
               await this.xapiService.sendStatement(statement, this.xapiEndpoint, this.xapiAuth);
             } catch (error) {
               console.error("Error sending xAPI statement: ", error)
