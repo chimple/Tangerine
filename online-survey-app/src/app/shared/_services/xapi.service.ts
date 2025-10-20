@@ -18,15 +18,11 @@ export class XapiService {
 
   async sendStatement(statement: any, lrsEndpointUrl:string, auth: string): Promise<void> {
     const headers = this.getHeaders(auth);
-     if (navigator.onLine) {
-        let endpoint = lrsEndpointUrl + "/statements";
-        console.log("endpoint", endpoint);
+      let endpoint = lrsEndpointUrl + "/statements";
       try {
         await this.http.post(endpoint, statement, { headers }).toPromise();
       } catch (err) {
         console.warn('Failed to send, saving offline', err);
-        
       }
-    }
   };
 }
