@@ -7,7 +7,6 @@ import { TangyFormService } from '../tangy-form.service';
 import { XapiAgent } from '../../model/xapi-agent.model';
 import { XapiGroup } from 'src/app/model/xapi-group.model';
 import { XapiActorBase } from 'src/app/model/xapi-actor-base.model';
-import { TangyFormResponse, XapiStatement } from './tangy-forms-player.components.types';
 import { XapiService } from 'src/app/shared/_services/xapi.service';
 
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
@@ -37,7 +36,7 @@ export class TangyFormsPlayerComponent implements OnInit {
   xapiEndpoint?: string;
   xapiAuth?: string;
   xapiRegistration?: string;
-  xapiResponse: XapiStatement[] = [];
+  xapiStatementWithActor: any[] = [];
    
 
   throttledSaveLoaded
@@ -133,14 +132,14 @@ export class TangyFormsPlayerComponent implements OnInit {
     if (this.caseService) {
       tangyForm.addEventListener('TANGY_FORM_UPDATE', async (event) => {
         let response = event.target.store.getState();
-        this.xapiResponse = [];
+        this.xapiStatementWithActor = [];
           if (response && response.items) {
           for (let item of response.items) {
             if (item.inputs) {
               for (let input of item.inputs) {
                 if (input.xapiStatement) {
                   input.xapiStatement = {...input.xapiStatement, actor: this.xapiActor}
-                  this.xapiResponse.push(input.xapiStatement);
+                  this.xapiStatementWithActor.push(input.xapiStatement);
                 }
               }
             }
@@ -160,8 +159,8 @@ export class TangyFormsPlayerComponent implements OnInit {
         event.preventDefault();
         let response = event.target.store.getState();
         await this.saveResponse(response)
-        if(this.xapiResponse && this.xapiResponse.length > 0 && this.xapiEndpoint && this.xapiAuth) {
-          for (let statement of this.xapiResponse) {
+        if(this.xapiStatementWithActor && this.xapiStatementWithActor.length > 0 && this.xapiEndpoint && this.xapiAuth) {
+          for (let statement of this.xapiStatementWithActor) {
             try {
               await this.xapiService.sendStatement(statement, this.xapiEndpoint, this.xapiAuth);
             } catch (error) {

@@ -1,5 +1,5 @@
-import type { XapiAgent } from './xapi-agent.model';
-import type { XapiGroup } from './xapi-group.model';
+import type { XapiAgent } from "./xapi-agent.model";
+import type { XapiGroup } from "./xapi-group.model";
 
 declare var require: any;
 export abstract class XapiActorBase {
