@@ -133,7 +133,7 @@ export class TangyFormsPlayerComponent implements OnInit {
       tangyForm.addEventListener('TANGY_FORM_UPDATE', async (event) => {
         let response = event.target.store.getState();
         this.xapiStatementWithActor = [];
-          if (response && response.items) {
+        if (response && response.items) {
           for (let item of response.items) {
             if (item.inputs) {
               for (let input of item.inputs) {
