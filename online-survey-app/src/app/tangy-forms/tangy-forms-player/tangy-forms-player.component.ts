@@ -36,7 +36,7 @@ export class TangyFormsPlayerComponent implements OnInit {
   xapiEndpoint?: string;
   xapiAuth?: string;
   xapiRegistration?: string;
-  xapiStatementWithActor: any[] = [];
+  xapiStatementsWithActor: any[] = [];
    
 
   throttledSaveLoaded
@@ -132,19 +132,7 @@ export class TangyFormsPlayerComponent implements OnInit {
     if (this.caseService) {
       tangyForm.addEventListener('TANGY_FORM_UPDATE', async (event) => {
         let response = event.target.store.getState();
-        this.xapiStatementWithActor = [];
-        if (response && response.items) {
-          for (let item of response.items) {
-            if (item.inputs) {
-              for (let input of item.inputs) {
-                if (input.xapiStatement) {
-                  input.xapiStatement = {...input.xapiStatement, actor: this.xapiActor}
-                  this.xapiStatementWithActor.push(input.xapiStatement);
-                }
-              }
-            }
-          }
-        }
+        
 
         this.throttledSaveResponse(response)
   
@@ -158,16 +146,24 @@ export class TangyFormsPlayerComponent implements OnInit {
       tangyForm.addEventListener('after-submit', async (event) => {
         event.preventDefault();
         let response = event.target.store.getState();
-        await this.saveResponse(response)
-        if(this.xapiStatementWithActor && this.xapiStatementWithActor.length > 0 && this.xapiEndpoint && this.xapiAuth) {
-          for (let statement of this.xapiStatementWithActor) {
-            try {
-              await this.xapiService.sendStatement(statement, this.xapiEndpoint, this.xapiAuth);
-            } catch (error) {
-              console.error("Error sending xAPI statement: ", error)
+        this.xapiStatementsWithActor = [];
+        if (response && response.items) {
+          for (let item of response.items) {
+            if (item.inputs) {
+              for (let input of item.inputs) {
+                if (input.xapiStatement) {
+                  input.xapiStatement = {...input.xapiStatement, actor: this.xapiActor}
+                  this.xapiStatementsWithActor.push(input.xapiStatement);
+                }
+              }
             }
           }
         }
+        await this.saveResponse(response)
+        if(this.xapiStatementsWithActor && this.xapiStatementsWithActor.length > 0 && this.xapiEndpoint && this.xapiAuth) {
+          await this.xapiService.sendStatement(this.xapiStatementsWithActor, this.xapiEndpoint, this.xapiAuth);
+        }
+        
         if (this.caseService && this.caseService.caseEvent && this.caseService.eventForm) {
           this.caseService.markEventFormComplete(this.caseService.caseEvent.id, this.caseService.eventForm.id)
           await this.caseService.save()
