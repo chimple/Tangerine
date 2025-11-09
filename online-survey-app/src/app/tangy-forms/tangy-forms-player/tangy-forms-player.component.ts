@@ -132,8 +132,6 @@ export class TangyFormsPlayerComponent implements OnInit {
     if (this.caseService) {
       tangyForm.addEventListener('TANGY_FORM_UPDATE', async (event) => {
         let response = event.target.store.getState();
-        
-
         this.throttledSaveResponse(response)
   
         if (this.caseService.eventForm && !this.caseService.eventForm.formResponseId) {
@@ -142,7 +140,7 @@ export class TangyFormsPlayerComponent implements OnInit {
           await this.caseService.load(this.caseId);
         }
       })
-      
+
       tangyForm.addEventListener('after-submit', async (event) => {
         event.preventDefault();
         let response = event.target.store.getState();
