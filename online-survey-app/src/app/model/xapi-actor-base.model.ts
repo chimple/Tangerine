@@ -1,6 +1,7 @@
-import { XapiAgent } from "./xapi-agent.model";
-import { XapiGroup } from "./xapi-group.model";
+import type { XapiAgent } from "./xapi-agent.model";
+import type { XapiGroup } from "./xapi-group.model";
 
+declare var require: any;
 export abstract class XapiActorBase {
   constructor(
     public name?: string,
@@ -12,11 +13,16 @@ export abstract class XapiActorBase {
 
   abstract readonly objectType: 'Agent' | 'Group';
   
-  static fromRaw(raw: any): XapiAgent | XapiGroup {
-    return raw.objectType === 'Group'
-      ? XapiGroup.fromRaw(raw)
-      : XapiAgent.fromRaw(raw);
+  
+  static fromRaw(raw: any): XapiGroup | XapiAgent {
+  if (raw.objectType === 'Group') {
+    const { XapiGroup } = require("./xapi-group.model");
+    return XapiGroup.fromRaw(raw);
+  } else {
+    const { XapiAgent } = require("./xapi-agent.model");
+    return XapiAgent.fromRaw(raw);
   }
+}
 
   abstract toJSON(): any;
 }

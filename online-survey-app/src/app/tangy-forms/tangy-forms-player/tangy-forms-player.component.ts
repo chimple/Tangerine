@@ -7,6 +7,7 @@ import { TangyFormService } from '../tangy-form.service';
 import { XapiAgent } from '../../model/xapi-agent.model';
 import { XapiGroup } from 'src/app/model/xapi-group.model';
 import { XapiActorBase } from 'src/app/model/xapi-actor-base.model';
+import { XapiService } from 'src/app/shared/_services/xapi.service';
 
 const sleep = (milliseconds) => new Promise((res) => setTimeout(() => res(true), milliseconds))
 
@@ -35,6 +36,7 @@ export class TangyFormsPlayerComponent implements OnInit {
   xapiEndpoint?: string;
   xapiAuth?: string;
   xapiRegistration?: string;
+  xapiStatementsWithActor: any[] = [];
    
 
   throttledSaveLoaded
@@ -46,7 +48,8 @@ export class TangyFormsPlayerComponent implements OnInit {
     private router: Router, 
     private httpClient:HttpClient,
     private caseService: CaseService,
-    private tangyFormService: TangyFormService
+    private tangyFormService: TangyFormService,
+    private xapiService: XapiService
   ) { 
     this.router.events.subscribe(async (event) => {
         this.formId = this.route.snapshot.paramMap.get('formId');
@@ -59,12 +62,10 @@ export class TangyFormsPlayerComponent implements OnInit {
 
   async ngOnInit(): Promise<any> {
     this.window = window;
-
     // we are using the query parameters to get the actor and auth information
     this.route.queryParamMap.subscribe((query) => {
       const actorRaw = query.get('actor');
       const authRaw = query.get('auth');
-
       this.xapiEndpoint = query.get('endpoint');
       this.xapiRegistration = query.get('registration');
 
@@ -130,7 +131,7 @@ export class TangyFormsPlayerComponent implements OnInit {
 
     if (this.caseService) {
       tangyForm.addEventListener('TANGY_FORM_UPDATE', async (event) => {
-        let response = event.target.store.getState()
+        let response = event.target.store.getState();
         this.throttledSaveResponse(response)
   
         if (this.caseService.eventForm && !this.caseService.eventForm.formResponseId) {
@@ -143,7 +144,24 @@ export class TangyFormsPlayerComponent implements OnInit {
       tangyForm.addEventListener('after-submit', async (event) => {
         event.preventDefault();
         let response = event.target.store.getState();
+        this.xapiStatementsWithActor = [];
+        if (response && response.items) {
+          for (let item of response.items) {
+            if (item.inputs) {
+              for (let input of item.inputs) {
+                if (input.xapiStatement) {
+                  input.xapiStatement = {...input.xapiStatement, actor: this.xapiActor}
+                  this.xapiStatementsWithActor.push(input.xapiStatement);
+                }
+              }
+            }
+          }
+        }
         await this.saveResponse(response)
+        if(this.xapiStatementsWithActor && this.xapiStatementsWithActor.length > 0 && this.xapiEndpoint && this.xapiAuth) {
+          await this.xapiService.sendStatement(this.xapiStatementsWithActor, this.xapiEndpoint, this.xapiAuth);
+        }
+        
         if (this.caseService && this.caseService.caseEvent && this.caseService.eventForm) {
           this.caseService.markEventFormComplete(this.caseService.caseEvent.id, this.caseService.eventForm.id)
           await this.caseService.save()
