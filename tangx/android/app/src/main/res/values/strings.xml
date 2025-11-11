@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TangX</string>
+    <string name="title_activity_main">TangX</string>
+    <string name="package_name">org.rti.tangerine.tangx</string>
+    <string name="custom_url_scheme">org.rti.tangerine.tangx</string>
+</resources>
