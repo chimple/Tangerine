@@ -139,6 +139,14 @@ app.get('/version',
   }
 )
 
+app.get('/.well-known/tangerine', (req, res) =>{
+  return res.status(200).json({
+    appName: 'Tangerine',
+    version: process.env.T_VERSION,
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+})
 /*
  * Login and session API
  */
