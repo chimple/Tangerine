@@ -491,6 +491,48 @@ function allGroups() {
   return groups.map(group => group.trim()).filter(groupName => groupName !== '.git')
 }
 
+/* OPDS-api-endpoitns */
+// app.use('/public', express.static(path.join(__dirname, '../public')));
+const PUBLIC_DIR = path.resolve(process.cwd(), 'public');
+
+app.get('/opds', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'opds.json')));
+app.get('/manifest', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'manifest.json')));
+app.get('/opds/groups/:groupId', (req, res) => {
+  const groupId = req.params.groupId;
+  const filePath = path.join(PUBLIC_DIR, 'opds/groups', `${groupId}.json`);
+   if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Group not found' });
+  }
+  res.sendFile(filePath);
+});
+
+app.get('/opds/forms/:formId', (req, res) => {
+  const formId = req.params.formId;
+  const filePath = path.join(PUBLIC_DIR, 'opds/forms', `${formId}.json`);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Form not found' });
+  }
+  res.sendFile(filePath);
+});
+
+app.get('/opds/forms_icon', (req, res) => {
+  const filePath = path.join(PUBLIC_DIR, `opds/forms_icon.png`);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Form icon not found' });
+  }
+  res.sendFile(filePath);
+});
+
+app.get('/opds/groups_icon', (req, res) => {
+  const filePath = path.join(PUBLIC_DIR, `opds/groups_icon.png`);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Group icon not found' });
+  }
+  res.sendFile(filePath);
+});
+
+
+
 const runPaidWorker = require('./paid-worker.js')
 async function keepAlivePaidWorker() {
   let state = {}
